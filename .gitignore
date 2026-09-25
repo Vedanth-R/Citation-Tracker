@@ -1,0 +1,29 @@
+# Generated builds and downloaded Zotero / Node dependencies
+/.build/
+/build/
+/DerivedData/
+node_modules/
+
+# Local Swift, Xcode and editor settings
+/.swiftpm/
+/.vscode/
+/.idea/
+xcuserdata/
+*.xcuserstate
+
+# macOS metadata and temporary files
+.DS_Store
+._*
+*.log
+*.swp
+*.swo
+*~
+
+# Local credentials and signing material
+.env
+.env.*
+!.env.example
+*.p12
+*.p8
+*.mobileprovision
+*.provisionprofile
