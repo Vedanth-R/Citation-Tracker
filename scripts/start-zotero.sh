@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 CITEKIT_ZOTERO_DIR="$PWD/.build/zotero-server"
 if [[ ! -d "$CITEKIT_ZOTERO_DIR/node_modules" ]]; then
-    echo "Zotero Translation Server dependencies are missing. See README.md (Build and run)." >&2
+    echo "Zotero Translation Server dependencies are missing. See Docs/ProvidersAndConfidence.md (Build and run)." >&2
     exit 1
 fi
 cd "$CITEKIT_ZOTERO_DIR"

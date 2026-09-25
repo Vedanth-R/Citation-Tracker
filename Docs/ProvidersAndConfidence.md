@@ -63,6 +63,53 @@ Login launch should be used from a stable app location. Development rebuilds use
 
 ## Development
 
-See the [README](../README.md#build-and-run) for source setup, build commands and automated tests, and the [manual testing guide](ManualTesting.md) for feature walkthroughs.
+See the [manual testing guide](ManualTesting.md) for feature walkthroughs.
 
 `Support/Zotero/managed-server.cjs` wraps the unmodified upstream server. It binds to an OS-assigned loopback port, authenticates requests with a per-launch token, writes readiness to a private temporary directory, and exits if CiteKit's stdin pipe closes or its parent process disappears. No dependencies are downloaded when the app launches.
+
+## Build and run
+
+
+Requires macOS 14+, Swift 6 command-line tools or Xcode, and Git. The bundled Node runtime currently targets **Apple silicon**.
+
+For a fresh checkout, prepare the pinned Zotero dependencies once:
+
+```sh
+./scripts/fetch-node-runtime.sh
+export PATH="$PWD/.build/node-v24.21.0-darwin-arm64/bin:$PATH"
+git clone https://github.com/zotero/translation-server.git .build/zotero-server
+git -C .build/zotero-server checkout 3a9d17614896fc1fea73d7b880ea79273b605275
+git -C .build/zotero-server submodule update --init --recursive
+(cd .build/zotero-server && npm ci --omit=dev)
+```
+
+Then build and launch:
+
+```sh
+./scripts/test.sh
+./scripts/build-app.sh
+open build/CiteKit.app
+```
+
+Open `Package.swift` in Xcode to develop. Build scripts share SDK and module-cache configuration in `scripts/toolchain.sh`. Downloaded dependencies and app bundles are generated locally and excluded from Git.
+
+## Automated testing
+
+
+```sh
+# Default automated tests
+./scripts/test.sh
+
+# Include tests against live metadata APIs (requires internet)
+CITEKIT_LIVE_TESTS=1 ./scripts/test.sh
+
+# Test the actual bundled Zotero service after building the app
+CITEKIT_MANAGED_ZOTERO_TESTS=1 CITEKIT_PACKAGED_ZOTERO_APP="$PWD/build/CiteKit.app" ./scripts/test.sh --filter LocalZoteroServerTests
+```
+
+For custom-server development only, `scripts/start-zotero.sh` starts the prepared server using Node from your PATH. The standalone pipeline test uses `CITEKIT_ZOTERO_LIVE_TESTS=1`. Normal app use does not need this helper.
+
+Follow [ManualTesting.md](ManualTesting.md) for UI, cross-editor selection, confidence fixtures and login-launch checks. Automated tests do not establish compatibility with every editor.
+
+
+The Zotero dependency installation previously reported 14 audit findings (9 moderate, 2 high, 3 critical); these have not been remediated or freshly audited. Review dependencies before production distribution. See [third-party notices](ThirdPartyNotices.md) for licensing details.

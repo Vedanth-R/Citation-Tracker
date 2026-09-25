@@ -5,7 +5,7 @@ APP="$PWD/build/CiteKit.app"
 SERVER="$PWD/.build/zotero-server"
 RUNTIME="$PWD/.build/node-v24.21.0-darwin-arm64"
 if [[ ! -x "$RUNTIME/bin/node" || ! -d "$SERVER/node_modules" ]]; then
-    echo 'Missing Zotero build dependencies. See README.md (Build and run).' >&2
+    echo 'Missing Zotero build dependencies. See Docs/ProvidersAndConfidence.md (Build and run).' >&2
     exit 1
 fi
 DEST="$APP/Contents/Resources/Zotero"
