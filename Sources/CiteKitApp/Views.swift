@@ -30,22 +30,35 @@ struct CaptureView: View {
     @State private var conflictsOpen = false
     @State private var quoteOpen = false
     var onDismiss: (() -> Void)?
+    var onDashboard: (() -> Void)?
     var onHistory: (() -> Void)?
     var onSettings: (() -> Void)?
     var onHeightChange: ((CGFloat) -> Void)?
     private var transition: AnyTransition { reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)) }
     private var animation: Animation { .easeInOut(duration: reduceMotion ? 0 : 0.18) }
     private var desiredHeight: CGFloat {
-        let base: CGFloat = state.item != nil ? 540 : state.busy ? 210 : 255
+        let base: CGFloat = state.searching ? 590 : state.item != nil ? 540 : state.busy ? 210 : 255
         return base + (!SelectionReader.trusted ? 54 : 0) + (state.error != nil ? 66 : 0) + (quoteOpen ? 155 : 0) + (healthOpen || conflictsOpen ? 190 : 0)
     }
     var body: some View {
         VStack(spacing: 0) {
             searchBar
+            HStack {
+                Button(state.searching ? "Cite a URL or identifier" : "Find a source by title or author") {
+                    if state.searching { state.resetCapture(); state.input = "" }
+                    else { state.beginSearch(state.item == nil ? state.input : "") }
+                    sourceFocused = true
+                }.buttonStyle(.link)
+                Spacer()
+                Text(state.searching ? preferences.searchShortcut.label : preferences.shortcut.label).foregroundStyle(.secondary)
+            }.font(.caption).padding(.horizontal, 24).padding(.bottom, 10)
             Rectangle().fill(.primary.opacity(0.08)).frame(height: 1)
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if !SelectionReader.trusted { permissionHint }
+                    if !state.searching, let query = state.searchedQuery {
+                        Button("Back to search results") { state.resetCaptureForSearchResults(query) }.buttonStyle(.link).font(.caption)
+                    }
                     if let error = state.error {
                         Label(error, systemImage: "exclamationmark.triangle").font(.callout).foregroundStyle(.orange).textSelection(.enabled).transition(transition)
                     }
@@ -54,9 +67,11 @@ struct CaptureView: View {
                             ProgressView().controlSize(.small)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Finding your source…").font(.callout.weight(.medium))
-                                Text("Retrieving metadata and checking for discrepancies").font(.caption).foregroundStyle(.secondary)
+                                Text(state.searching ? "Searching Crossref for possible references" : "Retrieving metadata and checking for discrepancies").font(.caption).foregroundStyle(.secondary)
                             }
                         }.padding(.vertical, 16).frame(maxWidth: .infinity, alignment: .leading).transition(transition)
+                    } else if state.searching {
+                        sourceSearchResults
                     } else if let item = state.item {
                         result(item).transition(transition)
                     } else {
@@ -91,20 +106,52 @@ struct CaptureView: View {
     private var searchBar: some View {
         HStack(spacing: 15) {
             Image(systemName: "magnifyingglass").font(.system(size: 23, weight: .regular)).foregroundStyle(.secondary)
-            TextField("Cite a source…", text: $state.input)
+            TextField(state.searching ? "Title, author, year, publication…" : "Cite a source…", text: $state.input)
                 .font(.system(size: 22, weight: .regular)).textFieldStyle(.plain)
-                .focused($sourceFocused).accessibilityLabel("Source URL, DOI, PMID, arXiv ID, or ISBN")
-                .onSubmit { if !state.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !state.busy { sourceFocused = false; state.generate() } }
+                .focused($sourceFocused).accessibilityLabel(state.searching ? "Search by title, author, year, or publication" : "Source URL, DOI, PMID, arXiv ID, or ISBN")
+                .onSubmit { if !state.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !state.busy { sourceFocused = false; state.submitInput() } }
             if !state.input.isEmpty {
-                Button { state.resetCapture(); state.input = ""; sourceFocused = true } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
+                Button { let search = state.searching; state.resetCapture(); state.searching = search; state.input = ""; sourceFocused = true } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
                     .buttonStyle(.plain).help("Clear source").accessibilityLabel("Clear source")
             }
-            Button { sourceFocused = false; state.generate() } label: {
+            Button { sourceFocused = false; state.submitInput() } label: {
                 Image(systemName: "arrow.turn.down.left").font(.system(size: 14, weight: .medium))
                     .frame(width: 31, height: 29).background(.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 7))
             }.buttonStyle(.plain).disabled(state.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.busy)
-                .help("Generate citation (Return)").accessibilityLabel("Generate citation")
+                .help(state.searching ? "Search sources (Return)" : "Generate citation (Return)").accessibilityLabel(state.searching ? "Search sources" : "Generate citation")
         }.padding(.horizontal, 24).frame(height: 76)
+    }
+    private var sourceSearchResults: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Find a source").font(.headline)
+            Text("Search scholarly records by title, author, year, or publication. Results are suggestions, not verified matches. A name or date alone may be too broad.").font(.callout).foregroundStyle(.secondary)
+            Text("Search text is sent to Crossref when you press Return or use the search shortcut.").font(.caption).foregroundStyle(.secondary)
+            if let query = state.searchedQuery {
+                Text("Results for “\(query)”").font(.caption).foregroundStyle(.secondary)
+                if state.searchResults.isEmpty {
+                    Text("No usable records found. Add a title or author, or try searching the web.").font(.callout)
+                }
+            }
+            ForEach(state.searchResults) { candidate in
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(candidate.title).font(.callout.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+                    Text(candidate.authors.isEmpty ? "Author unavailable" : candidate.authors).font(.caption).lineLimit(2)
+                    Text([candidate.publication, candidate.year.map(String.init) ?? "Date unavailable"].filter { !$0.isEmpty }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                    HStack {
+                        Link(candidate.url.absoluteString, destination: candidate.url).font(.caption).lineLimit(1)
+                        Spacer()
+                        Button("Cite this source") { state.selectSearchResult(candidate) }.controlSize(.small)
+                    }
+                }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 9))
+            }
+            Text("Crossref does not cover every website. For news, blogs, or other webpages, search in your browser and paste the chosen URL into CiteKit.").font(.caption).foregroundStyle(.secondary)
+            Button("Search the web in browser…") {
+                var url = URLComponents(string: "https://www.google.com/search")!
+                url.queryItems = [URLQueryItem(name: "q", value: state.input)]
+                if let url = url.url { NSWorkspace.shared.open(url) }
+            }.disabled(state.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
     }
     private var permissionHint: some View {
         HStack(alignment: .center, spacing: 10) {
@@ -249,6 +296,7 @@ struct CaptureView: View {
             Image(systemName: "text.quote").font(.system(size: 12, weight: .semibold))
             Text(state.notice.isEmpty ? "CiteKit" : state.notice).font(.system(size: 11)).lineLimit(1).contentTransition(.opacity)
             Spacer(minLength: 8)
+            if let onDashboard { Button(action: onDashboard) { Image(systemName: "arrow.up.left.and.arrow.down.right") }.buttonStyle(.plain).help("Open dashboard in full screen").accessibilityLabel("Open dashboard in full screen") }
             if let onHistory { Button(action: onHistory) { Image(systemName: "clock.arrow.circlepath") }.buttonStyle(.plain).help("Citation history").accessibilityLabel("Citation history") }
             if let onSettings { Button(action: onSettings) { Image(systemName: "gearshape") }.buttonStyle(.plain).help("Preferences").accessibilityLabel("Preferences") }
             if let onDismiss { Button(action: onDismiss) { KeyHint(text: "esc") }.buttonStyle(.plain).help("Dismiss CiteKit").accessibilityLabel("Dismiss CiteKit") }
@@ -299,6 +347,10 @@ struct HistoryView: View {
                     }
                 } else { ContentUnavailableView("Your research, within reach", systemImage: "text.quote", description: Text("Choose a source to copy its citation or revisit a quote.")) }
             }.frame(minWidth: 490)
+        }.onAppear {
+            if let identity = state.item?.identity { selected = records.first { $0.item?.identity == identity } }
+        }.onChange(of: records.map(\.id)) {
+            if let selected, !records.contains(where: { $0.id == selected.id }) { self.selected = nil; state.resetCapture() }
         }
     }
 }

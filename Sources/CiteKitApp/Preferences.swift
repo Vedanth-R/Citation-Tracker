@@ -9,6 +9,7 @@ struct KeyboardShortcut: Codable, Equatable {
     var modifiers: UInt32
     var label: String
     static let standard = KeyboardShortcut(keyCode: UInt32(kVK_ANSI_C), modifiers: UInt32(optionKey | cmdKey), label: "⌥⌘C")
+    static let search = KeyboardShortcut(keyCode: UInt32(kVK_ANSI_F), modifiers: UInt32(optionKey | cmdKey), label: "⌥⌘F")
     static func from(_ event: NSEvent) -> KeyboardShortcut? {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard flags.contains(.command), flags.contains(.option) || flags.contains(.control), !event.isARepeat,
@@ -36,10 +37,12 @@ enum CopyBehavior: String, CaseIterable { case full = "Full citation", inText = 
     @Published private(set) var zoteroEnabled: Bool
     @Published private(set) var zoteroCustomServer: Bool
     @Published private(set) var shortcut: KeyboardShortcut
+    @Published private(set) var searchShortcut: KeyboardShortcut
     @Published var shortcutError: String?
     @Published var loginError: String?
     @Published var loginStatus = SMAppService.mainApp.status
     var applyShortcut: ((KeyboardShortcut) -> Bool)?
+    var applySearchShortcut: ((KeyboardShortcut) -> Bool)?
     private let defaults = UserDefaults.standard
     init() {
         let d = UserDefaults.standard
@@ -49,6 +52,7 @@ enum CopyBehavior: String, CaseIterable { case full = "Full citation", inText = 
         showMenuBar = d.bool(forKey: "showMenuBar"); pubmed = d.bool(forKey: "providerPubMed"); arxiv = d.bool(forKey: "providerArxiv"); isbn = d.bool(forKey: "providerISBN"); compareWeb = d.bool(forKey: "compareWeb")
         zoteroURL = d.string(forKey: "zoteroURL") ?? "http://127.0.0.1:1969"; zoteroEnabled = d.bool(forKey: "zoteroEnabled")
         zoteroCustomServer = d.object(forKey: "zoteroCustomServer") != nil ? d.bool(forKey: "zoteroCustomServer") : !["http://127.0.0.1:1969", "http://localhost:1969"].contains(d.string(forKey: "zoteroURL") ?? "http://127.0.0.1:1969")
+        searchShortcut = d.data(forKey: "searchShortcut").flatMap { try? JSONDecoder().decode(KeyboardShortcut.self, from: $0) } ?? .search
         shortcut = d.data(forKey: "shortcut").flatMap { try? JSONDecoder().decode(KeyboardShortcut.self, from: $0) } ?? .standard
     }
     var resolverOptions: ResolverOptions {
@@ -57,8 +61,14 @@ enum CopyBehavior: String, CaseIterable { case full = "Full citation", inText = 
         return options
     }
     func setShortcut(_ value: KeyboardShortcut) {
+        guard value.keyCode != searchShortcut.keyCode || value.modifiers != searchShortcut.modifiers else { shortcutError = "Choose different shortcuts for citation capture and source search."; return }
         guard applyShortcut?(value) == true else { shortcutError = "This shortcut could not be registered. Your previous shortcut is still active."; return }
         shortcut = value; defaults.set(try? JSONEncoder().encode(value), forKey: "shortcut"); shortcutError = nil
+    }
+    func setSearchShortcut(_ value: KeyboardShortcut) {
+        guard value.keyCode != shortcut.keyCode || value.modifiers != shortcut.modifiers else { shortcutError = "Choose different shortcuts for citation capture and source search."; return }
+        guard applySearchShortcut?(value) == true else { shortcutError = "The search shortcut is unavailable. Your previous shortcut is still active."; return }
+        searchShortcut = value; defaults.set(try? JSONEncoder().encode(value), forKey: "searchShortcut"); shortcutError = nil
     }
     func setZoteroEnabled(_ enabled: Bool) {
         zoteroEnabled = enabled; defaults.set(enabled, forKey: "zoteroEnabled")
@@ -118,13 +128,14 @@ private final class ShortcutField: NSTextField {
     }
 }
 struct ShortcutRecorder: NSViewRepresentable {
+    var search = false
     @ObservedObject var preferences: Preferences
     func makeNSView(context: Context) -> NSTextField {
         let field = ShortcutField(); field.isEditable = false; field.isSelectable = false; field.isBezeled = true; field.alignment = .center
-        field.onShortcut = { preferences.setShortcut($0) }; field.setAccessibilityLabel("Global citation shortcut. Click and press Command, Option or Control, and a letter.")
+        field.onShortcut = { if search { preferences.setSearchShortcut($0) } else { preferences.setShortcut($0) } }; field.setAccessibilityLabel("Global citation shortcut. Click and press Command, Option or Control, and a letter.")
         return field
     }
-    func updateNSView(_ view: NSTextField, context: Context) { view.stringValue = preferences.shortcut.label }
+    func updateNSView(_ view: NSTextField, context: Context) { view.stringValue = search ? preferences.searchShortcut.label : preferences.shortcut.label }
 }
 struct PreferencesView: View {
     @ObservedObject var preferences = Preferences.shared
@@ -144,6 +155,8 @@ struct PreferencesView: View {
             }
             Section("Highlight → shortcut → citation") {
                 HStack { Text("Global shortcut"); ShortcutRecorder(preferences: preferences).frame(width: 255, height: 26); Button("Reset") { preferences.setShortcut(.standard) } }
+                HStack { Text("Search sources"); ShortcutRecorder(search: true, preferences: preferences).frame(width: 255, height: 26); Button("Reset") { preferences.setSearchShortcut(.search) } }
+                Text("The search shortcut looks up selected titles, authors, dates, or publication names. Search text is sent to Crossref only when you submit a search.").font(.caption).foregroundStyle(.secondary)
                 Text("Click the shortcut, then press Command with Option or Control and a letter/number. Changes take effect immediately.").font(.caption).foregroundStyle(.secondary)
                 if let error = preferences.shortcutError { Text(error).foregroundStyle(.orange) }
                 Button("Enable Accessibility…") { SelectionReader.requestPermission() }
@@ -175,7 +188,7 @@ struct PreferencesView: View {
                     }
                 }
             }
-            Section("Privacy") { Text("Selection is read only when you invoke CiteKit. History and quotes stay on this Mac. Only source URLs and identifiers are used for provider lookups.").font(.caption) }
+            Section("Privacy") { Text("Selection is read only when you invoke CiteKit. History and quotes stay on this Mac. Source URLs and identifiers are used for citation lookups. Explicit source searches send your selected or entered search text to Crossref.").font(.caption) }
         }.formStyle(.grouped).frame(minWidth: 580, minHeight: 650)
         .onAppear { zoteroDraft = preferences.zoteroURL; preferences.loginStatus = SMAppService.mainApp.status }
     }

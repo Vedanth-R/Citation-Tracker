@@ -9,6 +9,16 @@
 
 The selection reader uses AXSelectedText, then AXSelectedTextRange and the range-string API, then the selected UTF-16 range within the focused text element's value. It never simulates Command-C or replaces your clipboard to retrieve a selection. If an editor does not expose a readable selection, copy it yourself and use **Cite Clipboard**. Granting permission is a macOS user action; CiteKit cannot grant it for you.
 
+## Finding a source without a URL
+
+Highlight a title, author, publication, date, or partial reference and press **Option–Command–F**. You can also choose **Find Sources…** and paste a query. Both shortcuts can be changed independently in Preferences.
+
+The search uses Crossref's `query.bibliographic` endpoint and shows up to ten unique DOI records in the provider's relevance order. Each candidate includes its title, authors, publication, date, and DOI link. Search ranking is not citation confidence. No candidate is selected or saved automatically; **Cite this source** resolves the chosen DOI through the usual verification, formatting, and history pipeline. **Back to search results** lets you choose a different record, including after a failed citation lookup.
+
+A title or a combination of fields works better than a common surname or date alone. Crossref covers scholarly records, not the entire web. For news/blogs and other websites, the explicit **Search the web in browser…** button opens Google with the query; paste the URL you choose into CiteKit. There is no automatic general-web scraping or guessed source URL.
+
+Only an explicit search submits the query. Typing and ordinary quote capture do not trigger searches. Clearing or replacing a search cancels it and discards late results.
+
 ## Providers
 
 | Input | Lookup | Meaning of success |
@@ -20,7 +30,7 @@ The selection reader uses AXSelectedText, then AXSelectedTextRange and the range
 | Web URL | JSON-LD / academic / common HTML metadata | Extracted, not independently verified |
 | Web URL with configured server | Zotero Translation Server `/web` | One translated item; ambiguous multi-item results are rejected |
 
-PubMed, arXiv, ISBN and webpage comparison can be configured in Preferences. Crossref is the core DOI provider. Unknown titles/prose do not trigger silent web searches. arXiv calls are spaced at least three seconds apart. Quotes are never sent to providers.
+PubMed, arXiv, ISBN and webpage comparison can be configured in Preferences. Crossref is the core DOI provider. Unknown titles/prose do not trigger silent web searches. arXiv calls are spaced at least three seconds apart. Saved quotes are not sent to providers. The separate search action sends selected or entered reference text to Crossref.
 
 Enable **Use Zotero** in Preferences. CiteKit bundles the Translation Server and Node runtime, starts an authenticated localhost service automatically, waits for readiness, and stops its own service when disabled or on quit. No terminal or server address is needed. The saved preference also restores the service on app launch. If the child exits, the next lookup retries startup. Failed startup is included in the confidence report.
 

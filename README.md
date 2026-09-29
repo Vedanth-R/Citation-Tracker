@@ -8,8 +8,10 @@ Create citations from article links, DOIs, PubMed IDs, arXiv IDs, and book ISBNs
 
 - Generate MLA 9, APA 7, and BibTeX citations.
 - Capture highlighted text with a keyboard shortcut.
+- Find scholarly sources from a title, author, year, or publication name.
 - Save quotes with their sources and page numbers.
 - Search your citation history and copy saved citations again.
+- Open the dashboard for library totals, activity stats, and a shortcut guide.
 - Review missing information, conflicting metadata, and citation confidence.
 
 ## Getting started
@@ -24,7 +26,11 @@ Check [Releases](https://github.com/Vedanth-R/Citation-Tracker/releases) for ava
 
 To capture text directly from a document, enable CiteKit in **System Settings → Privacy & Security → Accessibility**. Highlight a URL or identifier and press **Option–Command–C**. If your editor does not support selection capture, copy the text and choose **Cite Clipboard** instead.
 
-Highlighting a passage captures it as a quote; add its source and page number to save it with a citation. Sources are saved automatically in **History**.
+**No URL?** Highlight a title or partial reference and press **Option–Command–F**, or choose **Find Sources…** from the menu. Review the suggested scholarly sources and click **Cite this source**. For websites outside Crossref’s coverage, use the browser-search button and paste the chosen URL.
+
+Highlighting a passage with Option–Command–C captures it as a quote; add its source and page number to save it with a citation. Sources are saved automatically in **History**.
+
+Open **Dashboard** from the menu bar for your research overview, history, and commands. Choose **Dashboard in Full Screen**, or click the capture panel’s expand button, for a larger workspace. Activity counters stay on your Mac and start when you use this version.
 
 ## Settings
 
@@ -36,8 +42,8 @@ Closing the panel keeps CiteKit running in the background. Use **Quit CiteKit** 
 
 ## Privacy and limitations
 
-History and quotes stay on your Mac. Source links and identifiers are sent to the enabled metadata providers. CiteKit does not continuously monitor your clipboard or collect telemetry.
+History and quotes stay on your Mac. Source links and identifiers are sent to the enabled metadata providers. Explicit source searches send the selected or entered search text to Crossref. CiteKit does not continuously monitor your clipboard or collect telemetry.
 
-Review citations before using them. Confidence reflects the available citation metadata, not the quality of the research. Some websites and editors may not work fully, copied citations are plain text, and PDF import is not supported. This preview is not notarized by Apple.
+Review citations before using them. Confidence reflects the available citation metadata, not the quality of the research. Some websites and editors may not work fully, copied citations are plain text, and PDF import is not supported.
 
-[Feature details](Docs/ProvidersAndConfidence.md) · [Testing walkthrough](Docs/ManualTesting.md) · [Third-party notices](Docs/ThirdPartyNotices.md)
+[Third-party notices](Docs/ThirdPartyNotices.md)

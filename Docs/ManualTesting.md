@@ -44,8 +44,27 @@ These pages are synthetic and clearly labeled. Control-C stops this test-page se
 
 ## Not yet available
 
-Automatic browser/PDF source association for quotes, PDF import/page detection, drag-and-drop, article-title search, free-form metadata editing, rich-text clipboard formatting, automatic clipboard monitoring, recent sources inside the menu, bibliography export, projects/tags/favorites, cloud sync and Word/Google Docs integrations.
+Automatic browser/PDF source association for quotes, PDF import/page detection, drag-and-drop, free-form metadata editing, rich-text clipboard formatting, automatic clipboard monitoring, recent sources inside the menu, bibliography export, projects/tags/favorites, cloud sync and Word/Google Docs integrations.
 
 ## Reporting a failed test
 
 Record the test number, exact input, originating app, current preferences, expected result, actual result, and visible error or screenshot. Distinguish “source lookup failed” from “selection could not be read.”
+
+## Source discovery without a URL
+
+1. In TextEdit, highlight `Piwowar sharing detailed research data increased citation rate 2007` and press Option–Command–F. Expect a scholarly-source list including DOI `10.1371/journal.pone.0000308`, with authors, year, publication, and a clickable DOI URL.
+2. Choose **Cite this source**. Expect the regular citation, verification, copying, and History flow. Use **Back to search results** to choose another candidate. Merely searching must not save candidates to History.
+3. Use **Find Sources…** to paste/edit a query without Accessibility permission. Search a common surname or just a year: results may be broad and must not be labeled verified. Try an obscure nonsense query; no-results or weak suggestions must not generate a citation automatically.
+4. Search for a general website/news title. Crossref may not cover it. Click **Search the web in browser…**, choose a page yourself, then use **Paste Source…** to cite its URL.
+5. Change both shortcuts in Preferences. Each should invoke only its own action; assigning the same combination to both should be rejected. Verify Option–Command–C still captures prose as a quote rather than searching it.
+6. Clear during a search, or switch to citation mode. Late results must not reappear. Disconnect the network and retry: expect an error and an editable query, not a misleading no-results response.
+7. Try an over-1,000-character selection and whitespace-only manual input: expect an explanatory error or disabled submission without a network request.
+
+## Dashboard
+
+1. Choose **Dashboard** in the menu bar. Check Overview, History, and Commands; resize the window and try light/dark appearances.
+2. Choose **Dashboard in Full Screen**, or use the capture panel's expand button. Toggle back using the dashboard's expand button or the native green window control. Closing the dashboard must keep CiteKit running.
+3. Generate a citation, copy it, and complete a source search. The local generation/copy/search counters should increase once per successful action. Change citation style or review a saved source: generation counts should not increase. Quit/reopen and verify counters remain.
+4. Save a quote or delete a disposable source. Library/quote/review totals should update from the shared history; activity counters are lifetime actions since tracking began, so deletion does not reduce them.
+5. Click a recent source to open its history detail. Search, recopy, review conflicts, and restore saved quotes. Use New citation and Find sources to open the capture panel.
+6. Change shortcuts in Preferences and return to Commands: displayed shortcuts should update. Verify the activity chart has seven days, including zero-activity days, and never implies historical tracking before the displayed start date.
