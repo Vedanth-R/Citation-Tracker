@@ -68,3 +68,34 @@ Record the test number, exact input, originating app, current preferences, expec
 4. Save a quote or delete a disposable source. Library/quote/review totals should update from the shared history; activity counters are lifetime actions since tracking began, so deletion does not reduce them.
 5. Click a recent source to open its history detail. Search, recopy, review conflicts, and restore saved quotes. Use New citation and Find sources to open the capture panel.
 6. Change shortcuts in Preferences and return to Commands: displayed shortcuts should update. Verify the activity chart has seven days, including zero-activity days, and never implies historical tracking before the displayed start date.
+
+## Resume benchmark — October 1, 2026
+
+Measured using the release core library and bundled Zotero service on macOS 27.0.1. Six fixed public URLs were processed sequentially, once each, with webpage comparison and Zotero enabled. Timing starts at resolver invocation and ends after APA formatting; it excludes selection capture, UI rendering, history persistence, and server startup. Network results vary; the first lookup overlapped the regression suite. This is a small smoke benchmark, not a representative accuracy or performance study.
+
+| Source URL | Seconds | Zotero extraction |
+| --- | ---: | --- |
+| https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0000308 | 5.63 | Succeeded |
+| https://www.nature.com/articles/nphys1170 | 20.82 | Succeeded |
+| https://pubmed.ncbi.nlm.nih.gov/31452104/ | 3.97 | Succeeded |
+| https://arxiv.org/abs/1706.03762 | 1.02 | Not attempted (direct arXiv provider) |
+| https://en.wikipedia.org/wiki/Digital_object_identifier | 3.76 | Succeeded |
+| https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020124 | 3.68 | Succeeded |
+
+All six lookups produced nonempty APA output. This does not establish bibliographic correctness. Zotero extraction succeeded for the five URLs on which it was attempted (four domains); arXiv used its identifier provider. Median resolver-to-APA time: 3.86 seconds; mean: 6.48 seconds; range: 1.02–20.82 seconds. Bundled-service startup, excluded from these timings: 0.86 seconds.
+
+Thirty additional APA formatting-only operations (five per resolved item, each using a new formatter) averaged 848 ms, with median 838 ms. No performance optimization or baseline speedup is claimed.
+
+Regression run: 31 individual tests passed, 7 opt-in live tests skipped (38 declared tests). The verifier compares nine fields: title, authors, date, publication, publisher, volume, issue, pages, and DOI. Five named external metadata providers are integrated, plus a built-in webpage extractor.
+
+Temporary benchmark harness, raw JSON, and logs are in `.build/ResumeBenchmark.swift`, `.build/resume-benchmark.json`, `.build/resume-benchmark.log`, and `.build/resume-test-results.log` (ignored by Git).
+
+## Startup readiness
+
+- Quit and reopen CiteKit. Expect a small loading screen with an indeterminate spinner, then automatic dismissal. First launch opens capture afterward; later launches remain in the menu bar.
+- Choose Continue in background, or invoke capture/search/dashboard during startup. The splash must dismiss and stay dismissed while checks finish.
+- Start offline: the app must remain usable for saved history and copying, without repeated dialogs or disabled providers. Remote probes run concurrently with 4-second request / 5-second resource timeouts. A later citation lookup retries normally.
+- Disable optional PubMed/arXiv/ISBN providers and restart; their startup probes are omitted. With managed Zotero enabled, readiness is checked through its existing startup deadline. Custom Zotero servers are not probed automatically at startup.
+- Local checks open existing history, format a synthetic citation in all three formats, and record shortcut registration and Accessibility status. They do not save synthetic history, increment statistics, or prompt for permissions.
+- Details are diagnostic-only: Console subsystem `dev.citekit.mac`, category `startup`. API reachability is a launch-time sample, not a guarantee all lookups will work. Fixed public probe URLs contain no user research data.
+- Quit while loading and verify the managed Zotero process terminates. Check light/dark appearance and that the splash does not steal keyboard focus from another application.

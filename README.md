@@ -20,7 +20,7 @@ Requires **macOS 14 or later on an Apple silicon Mac**. New source lookups requi
 
 Check [Releases](https://github.com/Vedanth-R/Citation-Tracker/releases) for available downloads. To build the app yourself, follow the [build instructions](Docs/ProvidersAndConfidence.md#build-and-run).
 
-1. Open CiteKit and click its quotation-mark icon in the menu bar.
+1. Open CiteKit. A loading screen appears while it prepares your workspace; you can continue in the background. Click its quotation-mark icon in the menu bar.
 2. Choose **Paste Source…**, paste a link or identifier, and press Return.
 3. Select **MLA 9**, **APA 7**, or **BibTeX**, then copy your citation.
 
@@ -42,7 +42,7 @@ Closing the panel keeps CiteKit running in the background. Use **Quit CiteKit** 
 
 ## Privacy and limitations
 
-History and quotes stay on your Mac. Source links and identifiers are sent to the enabled metadata providers. Explicit source searches send the selected or entered search text to Crossref. CiteKit does not continuously monitor your clipboard or collect telemetry.
+History and quotes stay on your Mac. Source links and identifiers are sent to the enabled metadata providers. Explicit source searches send the selected or entered search text to Crossref. Startup also makes fixed public availability requests to enabled APIs, without sending your research data. CiteKit does not continuously monitor your clipboard or collect telemetry.
 
 Review citations before using them. Confidence reflects the available citation metadata, not the quality of the research. Some websites and editors may not work fully, copied citations are plain text, and PDF import is not supported.
 
