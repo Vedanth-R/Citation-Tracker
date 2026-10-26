@@ -37,6 +37,7 @@ import CiteKitCore
     var settingsWindow: NSWindow?
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(Preferences.shared.showMenuBar ? .accessory : .regular)
+        NSApp.appearance = Preferences.shared.appearance.native
         startup.show()
         startupTask = Task { [weak self] in
             await Task.yield()

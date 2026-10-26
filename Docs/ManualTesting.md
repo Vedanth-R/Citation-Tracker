@@ -99,3 +99,9 @@ Temporary benchmark harness, raw JSON, and logs are in `.build/ResumeBenchmark.s
 - Local checks open existing history, format a synthetic citation in all three formats, and record shortcut registration and Accessibility status. They do not save synthetic history, increment statistics, or prompt for permissions.
 - Details are diagnostic-only: Console subsystem `dev.citekit.mac`, category `startup`. API reachability is a launch-time sample, not a guarantee all lookups will work. Fixed public probe URLs contain no user research data.
 - Quit while loading and verify the managed Zotero process terminates. Check light/dark appearance and that the splash does not steal keyboard focus from another application.
+
+## Appearance
+
+- Open Preferences → Appearance. Switch between Light and Dark while the dashboard, capture panel, history, and preferences are open. All should update immediately with readable text and controls.
+- Choose System and change macOS appearance; CiteKit should follow it. Explicit Light or Dark should remain unchanged when macOS appearance changes.
+- Quit and reopen in each mode. The startup screen and subsequent windows should use the saved setting.

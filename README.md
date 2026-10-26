@@ -1,6 +1,6 @@
 # CiteKit
 
-**v0.1.0 — Early preview. Working features are available, but bugs and rough edges are expected.**
+**v0.1.1 — Early preview. Working features are available, but bugs and rough edges are expected.**
 
 Create citations from article links, DOIs, PubMed IDs, arXiv IDs, and book ISBNs without leaving your document.
 
@@ -33,6 +33,8 @@ Highlighting a passage with Option–Command–C captures it as a quote; add its
 Open **Dashboard** from the menu bar for your research overview, history, and commands. Choose **Dashboard in Full Screen**, or click the capture panel’s expand button, for a larger workspace. Activity counters stay on your Mac and start when you use this version.
 
 ## Settings
+
+Open **Preferences → Appearance** to choose System, Light, or Dark mode. Your choice applies immediately and is remembered after restarting.
 
 Open **Preferences** to change the keyboard shortcut, default citation style, copy behavior, and launch-at-login setting.
 

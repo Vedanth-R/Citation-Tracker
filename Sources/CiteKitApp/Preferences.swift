@@ -23,9 +23,20 @@ struct KeyboardShortcut: Codable, Equatable {
         return KeyboardShortcut(keyCode: UInt32(event.keyCode), modifiers: modifiers, label: label)
     }
 }
+enum AppAppearance: String, CaseIterable {
+    case system = "System", light = "Light", dark = "Dark"
+    var native: NSAppearance? {
+        switch self {
+        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
+}
 enum CopyBehavior: String, CaseIterable { case full = "Full citation", inText = "In-text citation", ask = "Ask every time" }
 @MainActor final class Preferences: ObservableObject {
     static let shared = Preferences()
+    @Published var appearance: AppAppearance { didSet { defaults.set(appearance.rawValue, forKey: "appearance"); NSApp.appearance = appearance.native } }
     @Published var style: CitationStyle { didSet { defaults.set(style.rawValue, forKey: "defaultStyle") } }
     @Published var copyBehavior: CopyBehavior { didSet { defaults.set(copyBehavior.rawValue, forKey: "copyBehavior") } }
     @Published var showMenuBar: Bool { didSet { defaults.set(showMenuBar, forKey: "showMenuBar"); NSApp.setActivationPolicy(showMenuBar ? .accessory : .regular) } }
@@ -47,6 +58,7 @@ enum CopyBehavior: String, CaseIterable { case full = "Full citation", inText = 
     init() {
         let d = UserDefaults.standard
         d.register(defaults: ["showMenuBar": true, "providerPubMed": true, "providerArxiv": true, "providerISBN": true, "compareWeb": true])
+        appearance = AppAppearance(rawValue: d.string(forKey: "appearance") ?? "") ?? .system
         style = CitationStyle(rawValue: d.string(forKey: "defaultStyle") ?? "") ?? .mla
         copyBehavior = CopyBehavior(rawValue: d.string(forKey: "copyBehavior") ?? "") ?? .full
         showMenuBar = d.bool(forKey: "showMenuBar"); pubmed = d.bool(forKey: "providerPubMed"); arxiv = d.bool(forKey: "providerArxiv"); isbn = d.bool(forKey: "providerISBN"); compareWeb = d.bool(forKey: "compareWeb")
@@ -145,6 +157,10 @@ struct PreferencesView: View {
     var body: some View {
         Form {
             Section("General") {
+                Picker("Appearance", selection: $preferences.appearance) {
+                    ForEach(AppAppearance.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                Text("System follows your Mac. Light and Dark apply to all CiteKit windows.").font(.caption).foregroundStyle(.secondary)
                 Picker("Default citation style", selection: $preferences.style) { ForEach(CitationStyle.allCases) { Text($0.rawValue).tag($0) } }
                 Picker("Primary Copy action", selection: $preferences.copyBehavior) { ForEach(CopyBehavior.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
                 Toggle("Show menu-bar icon", isOn: $preferences.showMenuBar)
