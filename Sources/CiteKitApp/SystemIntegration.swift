@@ -9,23 +9,30 @@ import QuartzCore
     private var handler: EventHandlerRef?
     var action: (() -> Void)?
     private var current: KeyboardShortcut?
-    private var nextID: UInt32 = 1
+    private static var nextID: UInt32 = 1
+    private var registeredID: UInt32?
     func register(_ shortcut: KeyboardShortcut = .standard) -> Bool {
         if current == shortcut { return true }
         if handler == nil {
             var type = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-            let status = InstallEventHandler(GetApplicationEventTarget(), { _, _, userData in
-                guard let userData else { return noErr }
-                MainActor.assumeIsolated { Unmanaged<GlobalHotkey>.fromOpaque(userData).takeUnretainedValue().action?() }
-                return noErr
+            let status = InstallEventHandler(GetApplicationEventTarget(), { _, event, userData in
+                guard let userData, let event else { return OSStatus(eventNotHandledErr) }
+                var id = EventHotKeyID()
+                guard GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &id) == noErr else { return OSStatus(eventNotHandledErr) }
+                return MainActor.assumeIsolated {
+                    let owner = Unmanaged<GlobalHotkey>.fromOpaque(userData).takeUnretainedValue()
+                    guard id.signature == 0x43495445, owner.registeredID == id.id else { return OSStatus(eventNotHandledErr) }
+                    owner.action?()
+                    return noErr
+                }
             }, 1, &type, Unmanaged.passUnretained(self).toOpaque(), &handler)
             guard status == noErr else { return false }
         }
         var replacement: EventHotKeyRef?
-        let status = RegisterEventHotKey(shortcut.keyCode, shortcut.modifiers, EventHotKeyID(signature: 0x43495445, id: nextID), GetApplicationEventTarget(), 0, &replacement)
+        let status = RegisterEventHotKey(shortcut.keyCode, shortcut.modifiers, EventHotKeyID(signature: 0x43495445, id: Self.nextID), GetApplicationEventTarget(), 0, &replacement)
         guard status == noErr else { return false }
         if let reference { UnregisterEventHotKey(reference) }
-        reference = replacement; current = shortcut; nextID += 1
+        reference = replacement; current = shortcut; registeredID = Self.nextID; Self.nextID += 1
         return true
     }
 }
@@ -92,6 +99,7 @@ final class CitationPanel: NSPanel {
     private var presentationID = UUID()
     private var screenFrame: NSRect = .zero
     private var desiredHeight: CGFloat = 300
+    var onDashboard: (() -> Void)?
     var onHistory: (() -> Void)?
     var onSettings: (() -> Void)?
     private var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
@@ -106,6 +114,7 @@ final class CitationPanel: NSPanel {
             window.dismissAction = { [weak self] in self?.dismiss() }
             window.contentView = NSHostingView(rootView: CaptureView(state: state,
                 onDismiss: { [weak self] in self?.dismiss() },
+                onDashboard: { [weak self] in self?.onDashboard?() },
                 onHistory: { [weak self] in self?.onHistory?() },
                 onSettings: { [weak self] in self?.onSettings?() },
                 onHeightChange: { [weak self] height in self?.resize(to: height) }))

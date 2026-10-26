@@ -57,6 +57,10 @@ final class QuoteRecord: Identifiable, Codable {
     }
 }
 @MainActor final class AppState: ObservableObject {
+    @Published var searching = false
+    @Published var searchResults: [SourceSearchResult] = []
+    @Published var searchedQuery: String?
+    var sourceSearch = SourceSearch()
     @Published var input = ""
     @Published var quote = ""
     @Published var page = ""
@@ -77,7 +81,37 @@ final class QuoteRecord: Identifiable, Codable {
     private var generation = UUID()
     func resetCapture() {
         task?.cancel(); generation = UUID(); busy = false; item = nil; output = nil; error = nil; notice = ""
+        searching = false; searchResults = []; searchedQuery = nil
     }
+    func beginSearch(_ query: String = "") {
+        resetCapture(); searching = true; input = query; quote = ""; page = ""
+    }
+    func searchSources() {
+        task?.cancel()
+        let token = UUID(); generation = token
+        let query = input
+        searching = true; busy = true; error = nil; item = nil; output = nil; searchResults = []; searchedQuery = nil
+        task = Task {
+            do {
+                let results = try await sourceSearch.search(query)
+                guard !Task.isCancelled, generation == token else { return }
+                searchResults = results; searchedQuery = query
+                ActivityStats.shared.record(.search)
+            } catch {
+                guard !Task.isCancelled, generation == token else { return }
+                self.error = error.localizedDescription
+            }
+            if generation == token { busy = false }
+        }
+    }
+    func resetCaptureForSearchResults(_ query: String) {
+        task?.cancel(); generation = UUID(); busy = false; error = nil; item = nil; output = nil
+        input = query; searching = true
+    }
+    func selectSearchResult(_ result: SourceSearchResult) {
+        searching = false; input = result.doi; generate()
+    }
+    func submitInput() { if searching { searchSources() } else { generate() } }
     func generate() {
         task?.cancel()
         let token = UUID(); generation = token
@@ -90,6 +124,7 @@ final class QuoteRecord: Identifiable, Codable {
                 let result = try await CitationResolver(options: options).resolve(source)
                 guard !Task.isCancelled, generation == token else { return }
                 item = result; refresh(); try save()
+                if output != nil { ActivityStats.shared.record(.generated) }
             } catch {
                 guard !Task.isCancelled, generation == token else { return }
                 self.error = error.localizedDescription
@@ -133,6 +168,6 @@ final class QuoteRecord: Identifiable, Codable {
         do { try save(); notice = "Metadata choice saved; the original discrepancy remains visible." }
         catch { self.error = error.localizedDescription }
     }
-    func copy(_ string: String) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(string, forType: .string); notice = "Copied" }
-    func load(_ record: CitationRecord) { task?.cancel(); generation = UUID(); busy = false; item = record.item; input = item?.doi ?? item?.url ?? ""; quote = ""; page = ""; notice = ""; refresh() }
+    func copy(_ string: String) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(string, forType: .string); notice = "Copied"; ActivityStats.shared.record(.copied) }
+    func load(_ record: CitationRecord) { searching = false; searchResults = []; searchedQuery = nil; task?.cancel(); generation = UUID(); busy = false; item = record.item; input = item?.doi ?? item?.url ?? ""; quote = ""; page = ""; notice = ""; refresh() }
 }

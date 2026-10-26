@@ -38,3 +38,38 @@ import CiteKitCore
         #expect(repository.records.isEmpty)
     }
 }
+
+@MainActor struct SourceSearchFlowTests {
+    @Test func searchDoesNotSaveUnconfirmedCandidates() async throws {
+        let state = AppState()
+        let repository = try CitationRepository(inMemory: true)
+        state.repository = repository
+        state.sourceSearch = SourceSearch(client: HTTPClient { _ in
+            Data(#"{"message":{"items":[{"DOI":"10.1234/test","title":["Candidate"]}]}}"#.utf8)
+        })
+        state.beginSearch("Candidate")
+        state.searchSources()
+        for _ in 0..<100 where state.busy { try await Task.sleep(nanoseconds: 10_000_000) }
+        #expect(!state.busy)
+        #expect(state.searchResults.count == 1)
+        #expect(state.item == nil)
+        #expect(repository.records.isEmpty)
+        state.resetCapture()
+        #expect(state.searchResults.isEmpty)
+        #expect(!state.searching)
+    }
+    @Test func clearedSearchCannotRestoreLateResults() async throws {
+        let state = AppState()
+        state.sourceSearch = SourceSearch(client: HTTPClient { _ in
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            return Data(#"{"message":{"items":[{"DOI":"10.1234/late","title":["Late result"]}]}}"#.utf8)
+        })
+        state.beginSearch("Old query"); state.searchSources()
+        await Task.yield()
+        state.resetCapture()
+        try await Task.sleep(nanoseconds: 150_000_000)
+        #expect(state.searchResults.isEmpty)
+        #expect(state.searchedQuery == nil)
+        #expect(!state.busy)
+    }
+}
