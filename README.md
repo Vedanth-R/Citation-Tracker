@@ -34,9 +34,9 @@ Open **Dashboard** from the menu bar for your research overview, history, and co
 
 ## Settings
 
-Open **Preferences → Appearance** to choose System, Light, or Dark mode. Your choice applies immediately and is remembered after restarting.
+Open **Settings → Appearance** to choose System, Light, or Dark mode. Your choice applies immediately and is remembered after restarting.
 
-Open **Preferences** to change the keyboard shortcut, default citation style, copy behavior, and launch-at-login setting.
+Open **Settings…** from the menu bar (Command–comma), or use the gear in the popup or dashboard. General includes popup appearance, menu-bar visibility, and opening CiteKit at login. Separate tabs organize citation defaults, shortcuts, providers, and privacy.
 
 Enable **Use Zotero** for additional webpage metadata extraction. CiteKit manages the bundled service automatically; no separate Zotero installation or server setup is needed.
 

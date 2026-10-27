@@ -25,14 +25,14 @@ final class QuoteRecord: Identifiable, Codable {
 @MainActor final class CitationRepository: ObservableObject {
     @Published var records: [CitationRecord] = []
     private let context: NSManagedObjectContext
-    init(inMemory: Bool = false) throws {
+    init(inMemory: Bool = false, storageDirectory: URL? = nil) throws {
         let model = NSManagedObjectModel()
         let entity = NSEntityDescription(); entity.name = "SavedSource"; entity.managedObjectClassName = "NSManagedObject"
         let identity = NSAttributeDescription(); identity.name = "identity"; identity.attributeType = .stringAttributeType
         let payload = NSAttributeDescription(); payload.name = "payload"; payload.attributeType = .binaryDataAttributeType
         entity.properties = [identity, payload]; entity.uniquenessConstraints = [["identity"]]; model.entities = [entity]
         let coordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
-        let directory = inMemory ? FileManager.default.temporaryDirectory : try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("CiteKit", isDirectory: true)
+        let directory = try storageDirectory ?? (inMemory ? FileManager.default.temporaryDirectory : FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("CiteKit", isDirectory: true))
         if !inMemory { try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true) }
         try coordinator.addPersistentStore(ofType: inMemory ? NSInMemoryStoreType : NSSQLiteStoreType, configurationName: nil, at: inMemory ? nil : directory.appendingPathComponent("History.sqlite"))
         context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType); context.persistentStoreCoordinator = coordinator

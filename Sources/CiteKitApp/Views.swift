@@ -298,7 +298,7 @@ struct CaptureView: View {
             Spacer(minLength: 8)
             if let onDashboard { Button(action: onDashboard) { Image(systemName: "arrow.up.left.and.arrow.down.right") }.buttonStyle(.plain).help("Open dashboard in full screen").accessibilityLabel("Open dashboard in full screen") }
             if let onHistory { Button(action: onHistory) { Image(systemName: "clock.arrow.circlepath") }.buttonStyle(.plain).help("Citation history").accessibilityLabel("Citation history") }
-            if let onSettings { Button(action: onSettings) { Image(systemName: "gearshape") }.buttonStyle(.plain).help("Preferences").accessibilityLabel("Preferences") }
+            if let onSettings { Button(action: onSettings) { Image(systemName: "gearshape") }.buttonStyle(.plain).help("Settings").accessibilityLabel("Settings") }
             if let onDismiss { Button(action: onDismiss) { KeyHint(text: "esc") }.buttonStyle(.plain).help("Dismiss CiteKit").accessibilityLabel("Dismiss CiteKit") }
         }.foregroundStyle(.secondary).padding(.horizontal, 21).frame(height: 40)
             .background(.primary.opacity(0.025)).overlay(alignment: .top) { Rectangle().fill(.primary.opacity(0.06)).frame(height: 0.5) }

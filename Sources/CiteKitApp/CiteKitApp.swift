@@ -16,7 +16,7 @@ import CiteKitCore
             Button("Dashboard") { delegate.showDashboard() }
             Button("Dashboard in Full Screen") { delegate.showDashboard(fullScreen: true) }
             Button("History") { delegate.showHistory() }
-            Button("Preferences…") { delegate.showSettings() }
+            Button("Settings…") { delegate.showSettings() }.keyboardShortcut(",")
             Divider()
             Button("Quit CiteKit") { NSApp.terminate(nil) }.keyboardShortcut("q")
         }
@@ -145,7 +145,7 @@ import CiteKitCore
     }
     func showSettings() {
         startup.dismiss()
-        if settingsWindow == nil { settingsWindow = makeWindow("CiteKit Preferences", width: 620, height: 760, content: PreferencesView()) }
+        if settingsWindow == nil { settingsWindow = makeWindow("CiteKit Settings", width: 680, height: 660, content: PreferencesView()) }
         settingsWindow?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
     }
     private func makeWindow<V: View>(_ title: String, width: CGFloat, height: CGFloat, content: V) -> NSWindow {

@@ -109,7 +109,7 @@ struct DashboardView: View {
             }
             Spacer()
             Label("Stored on this Mac", systemImage: "internaldrive").font(.caption).foregroundStyle(.secondary)
-            Button(action: onSettings) { Label("Preferences", systemImage: "gearshape") }.buttonStyle(.plain)
+            Button(action: onSettings) { Label("Settings", systemImage: "gearshape") }.buttonStyle(.plain)
         }.padding(22).frame(width: 220).frame(maxHeight: .infinity)
             .background(.ultraThinMaterial)
     }
@@ -194,7 +194,7 @@ struct DashboardView: View {
                     shortcut("Capture a source or quote", keys: preferences.shortcut.label, detail: "Select an actual URL or identifier to generate a citation. Selected prose becomes a quote; add its source and page number manually.")
                     shortcut("Search for a source", keys: preferences.searchShortcut.label, detail: "Highlight a title, author, year, or publication. Review the suggestions, then choose Cite this source.")
                     Divider()
-                    shortcut("Primary copy action", keys: "⌘1", detail: "Copies the full citation, the in-text citation, or asks which one—according to Preferences.")
+                    shortcut("Primary copy action", keys: "⌘1", detail: "Copies the full citation, the in-text citation, or asks which one—according to Settings.")
                     shortcut("Copy in-text citation", keys: "⌘2", detail: "Include a page locator by entering it beside the in-text citation.")
                     shortcut("Copy BibTeX", keys: "⌘3", detail: "Copy a bibliography entry for LaTeX and reference tools.")
                     shortcut("Copy quote + citation", keys: "⌘4", detail: "With a quote and source loaded, copy the passage with an MLA or APA in-text citation.")
